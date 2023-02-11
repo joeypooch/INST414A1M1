@@ -1,0 +1,128 @@
+import requests
+import json
+import pandas as pd
+import matplotlib.pyplot as plt 
+import numpy as np
+
+'''
+#Search up player by name, no better way with this api
+search= requests.get("https://www.balldontlie.io/api/v1/players/?search=embiid")
+searchjson = search.json()
+print(searchjson)
+'''
+
+lbs = requests.get("https://www.balldontlie.io/api/v1/season_averages/?season=2022&player_ids[]=237")
+lbsjson = lbs.json()
+
+
+kaj = requests.get("https://www.balldontlie.io/api/v1/season_averages?season=1984&player_ids[]=2247")
+kajjson = kaj.json()
+
+
+dfl= pd.json_normalize(lbsjson, record_path = 'data')
+dftemp = pd.json_normalize(kajjson,record_path = 'data')
+df = pd.concat([dfl,dftemp])
+names = ["Lebron", "Kareem"]
+
+df['Name'] = names
+
+df = df[['Name','player_id','games_played','season','pts','fg_pct','fgm','fga','fg3_pct','fg3m','fg3a',
+        'ft_pct','ftm','fta','oreb','dreb','reb','ast','stl','blk','turnover','pf']]
+kajmask = df['Name'] == "Kareem"
+lbjmask = df['Name'] == "Lebron"
+kajdf = df[kajmask]
+lbjdf = df[lbjmask]
+
+kajpts = np.array([kajdf._get_value(0,'fgm'),kajdf._get_value(0,'fg3m'),kajdf._get_value(0,'ftm')])
+ptslb = ["Field Goals", "3 Pointers", "Free Throws"]
+lbjpts = np.array([lbjdf._get_value(0,'fgm'),lbjdf._get_value(0,'fg3m'),lbjdf._get_value(0,'ftm')])
+
+
+'''
+#Kareem Points
+plt.pie(kajpts, labels= ptslb, wedgeprops={"linewidth": 1, "edgecolor": "white"})
+plt.suptitle('Kareem Points')
+plt.show()
+'''
+'''
+#Lebron Points
+plt.pie(lbjpts, labels= ptslb, wedgeprops={"linewidth": 1, "edgecolor": "white"})
+plt.suptitle('Lebron Points')
+plt.show()
+'''
+kajer= kajdf._get_value(0,'pts') + kajdf._get_value(0,'reb')+\
+    kajdf._get_value(0,'ast')+kajdf._get_value(0,'stl')+\
+    kajdf._get_value(0,'blk')- (kajdf._get_value(0,'fga')-kajdf._get_value(0,'fgm'))-\
+    kajdf._get_value(0,'turnover')
+ljer= lbjdf._get_value(0,'pts') + lbjdf._get_value(0,'reb') + lbjdf._get_value(0,'ast')+\
+    lbjdf._get_value(0,'stl') + lbjdf._get_value(0,'blk')-\
+    (lbjdf._get_value(0,'fga')-lbjdf._get_value(0,'fgm'))-\
+    lbjdf._get_value(0,'turnover')
+ercmp = {'Kareem':kajer, 'Lebron':ljer, 'Average Player':15}
+'''
+#Player Efficiency
+fig = plt.figure(figsize = (10, 5))
+plt.bar(ercmp.keys(), ercmp.values(), width=.5, align = 'center')
+plt.suptitle("Kareem vs Lebron Efficiency vs Average Player")
+plt.ylabel("Efficiency")
+plt.tight_layout()
+plt.show()
+'''
+'''
+#3pa
+threepa = [kajdf._get_value(0,'fg3a'),lbjdf._get_value(0,'fg3a')]
+plt.bar(['Kareem', 'Lebron'], threepa, width=.5, align = 'center', color= 'purple')
+plt.suptitle("Three Point Attempts Per Game Comparison")
+plt.ylabel("3pa")
+plt.tight_layout()
+plt.show()
+'''
+threepa = [kajdf._get_value(0,'fg3a'),lbjdf._get_value(0,'fg3a')]
+#hakeem id = 540 ewint=2694 barkley=2937 bird = 2851 magic = 2994 it=440 jokic = 246 giannis = 15 kd = 140 
+#luka = 132 curry = 115 tatum = 434 joel = 145
+ho = requests.get("https://www.balldontlie.io/api/v1/season_averages/?season=1993&player_ids[]=540")
+hojson = ho.json()
+hopd= pd.json_normalize(hojson, record_path = 'data')
+
+pe = requests.get("https://www.balldontlie.io/api/v1/season_averages/?season=1989&player_ids[]=2694")
+pejson = pe.json()
+pepd= pd.json_normalize(pejson, record_path = 'data')
+
+cb = requests.get("https://www.balldontlie.io/api/v1/season_averages/?season=1986&player_ids[]=2937&player_ids[]=2851")
+cbjson = cb.json()
+cbpd= pd.json_normalize(cbjson, record_path = 'data')
+
+mj = requests.get("https://www.balldontlie.io/api/v1/season_averages/?season=1987&player_ids[]=2994")
+mjjson = mj.json()
+mjpd= pd.json_normalize(mjjson, record_path = 'data')
+
+it = requests.get("https://www.balldontlie.io/api/v1/season_averages/?season=1984&player_ids[]=440")
+itjson = it.json()
+itpd= pd.json_normalize(itjson, record_path = 'data')
+
+
+curr = requests.get("https://www.balldontlie.io/api/v1/season_averages/?player_ids[]=246&player_ids[]=15 \
+    &player_ids[]=140&player_ids[]=132&player_ids[]=115&player_ids[]=434&player_ids[]=145")
+currjson = curr.json()
+currpd= pd.json_normalize(currjson,record_path = 'data')
+
+dfother = pd.concat([hopd,pepd,cbpd,mjpd,itpd,currpd])
+nnames= ['Olajuwon', 'Larry Bird', 'Barkley', 'Magic','Giannis', \
+    'Curry', 'Luka', 'KD', 'Embiid', 'Jokic', 'Tatum']
+dfother['Name'] = nnames
+dfother = pd.concat([df,dfother])
+dfother = dfother.reset_index()
+del dfother['index']
+dfother =dfother[['Name','player_id','games_played','season','pts','fg_pct','fgm','fga','fg3_pct','fg3m','fg3a',
+        'ft_pct','ftm','fta','oreb','dreb','reb','ast','stl','blk','turnover','pf']]
+bignames = [['Kareem', 'Lebron', 'Olajuwon', 'Larry Bird', 'Charles Barkley', 'Magic Johnson', 'Giannis', \
+    'Curry', 'Luka', 'Kevin Durant', 'Embiid', 'Jokic', 'Tatum']]
+print(dfother)
+
+plt.xticks(rotation= 90)
+plt.bar(dfother['Name'],dfother['fg3a'] )
+plt.suptitle("Three Point Attempts Per Game Comparison")
+plt.ylabel("3pa")
+
+plt.show()
+
